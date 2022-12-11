@@ -1,5 +1,6 @@
 # react-rgbscaler
-A React component which uses a WebGL2 Canvas to upscale video with algorithms tuned for retro pixel art game footage
+A React component which uses a WebGL2 Canvas to upscale video with algorithms tuned for retro pixel art game footage.
+
 Built for use among the TASVideos and RetroRGB communities for precision playback of archival quality video on the web
 
 ## Summary
