@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "es5",
+    "lib": [ "es2015", "dom" ],
+    "jsx": "react-jsx",
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true,
+    "declarationDir": "types",
+    "emitDeclarationOnly": true,
+  },
+}
