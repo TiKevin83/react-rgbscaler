@@ -7,18 +7,18 @@ interface RGBScalerCanvasProps {
   playPauseButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>,
   maxCanvasWidth: number,
   maxCanvasHeight: number,
-  dar: number,
-  par: number,
+  dar?: number,
+  par?: number,
 }
 
 const RGBScalerCanvas = memo(function RGBScalerCanvas(props: RGBScalerCanvasProps)  {
-  const { videoRef, canvasProps, playPauseButtonProps, maxCanvasHeight, maxCanvasWidth, dar, par } = props;
-  const { isPlaying, handlePlayPauseClick, canvasRef } = useRGBScalerCanvas(videoRef, maxCanvasHeight, maxCanvasWidth, dar, par);
+  const { videoRef, canvasProps, playPauseButtonProps, maxCanvasWidth, maxCanvasHeight, dar, par } = props;
+  const { isPlaying, handlePlayPauseClick, canvasRef } = useRGBScalerCanvas(videoRef, maxCanvasWidth, maxCanvasHeight, dar, par);
   
   return (
     <>
       <button onClick={handlePlayPauseClick} {...playPauseButtonProps}>{isPlaying ? "Pause" : "Play"}</button>
-      <canvas ref={canvasRef} {...canvasProps} />
+      <canvas ref={canvasRef} style={{display: "block"}} {...canvasProps} />
     </>
   )
 });

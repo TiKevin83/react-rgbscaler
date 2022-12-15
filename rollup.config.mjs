@@ -3,11 +3,12 @@ import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
 import dts from "rollup-plugin-dts";
 import packageJson from "./package.json" assert { type: "json" };
+import peerDepsExternal from 'rollup-plugin-peer-deps-external';
+import { string } from 'rollup-plugin-string';
 
 export default [
   {
     input: "src/index.ts",
-    external: ["react", "react-dom"],
     output: [
       {
         file: packageJson.main,
@@ -21,6 +22,10 @@ export default [
       },
     ],
     plugins: [
+      string({
+        include: ["**/*.vert", "**/*.frag"]
+      }),
+      peerDepsExternal(),
       resolve(),
       commonjs(),
       typescript({ tsconfig: "./tsconfig.json" }),
