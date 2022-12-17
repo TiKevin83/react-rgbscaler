@@ -1,1 +1,1 @@
-export { default as RGBScaler } from "./RGBScaler";
+export { default as RGBScaler } from "./rgbscaler";
