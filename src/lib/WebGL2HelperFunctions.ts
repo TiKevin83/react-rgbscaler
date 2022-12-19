@@ -1,4 +1,23 @@
-export function initShaderProgram(gl: WebGL2RenderingContext, vertexShaderSource: string, fragmentShaderSource: string) {
+function loadShader(gl: WebGL2RenderingContext, type: number, source: string) {
+  const shader = gl.createShader(type);
+  if (!shader) {
+    return;
+  }
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.log(`An error occurred compiling the shaders: ${gl.getShaderInfoLog(shader)}`);
+    gl.deleteShader(shader);
+    return;
+  }
+  return shader;
+}
+
+export function initShaderProgram(
+  gl: WebGL2RenderingContext,
+  vertexShaderSource: string,
+  fragmentShaderSource: string
+) {
   const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
   const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
   const shaderProgram = gl.createProgram();
@@ -9,25 +28,10 @@ export function initShaderProgram(gl: WebGL2RenderingContext, vertexShaderSource
   gl.attachShader(shaderProgram, fragmentShader);
   gl.linkProgram(shaderProgram);
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    console.log('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+    console.log(`Unable to initialize the shader program: ${gl.getProgramInfoLog(shaderProgram)}`);
     return;
   }
   return shaderProgram;
-}
-
-function loadShader(gl: WebGL2RenderingContext, type: number, source: string) {
-  const shader = gl.createShader(type);
-  if (!shader) {
-    return
-  }
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.log('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
 }
 
 export function initBuffers(gl: WebGL2RenderingContext) {
@@ -50,15 +54,11 @@ export function initBuffers(gl: WebGL2RenderingContext) {
     0.0,  1.0,
   ];
 
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),
-                gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
   const indexBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  const indices = [
-    0,  1,  2,      0,  2,  3,
-  ];
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
-      new Uint16Array(indices), gl.STATIC_DRAW);
+  const indices = [0, 1, 2, 0, 2, 3];
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
 
   return {
     position: positionBuffer,

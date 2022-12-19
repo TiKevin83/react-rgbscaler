@@ -1,14 +1,15 @@
-import { RefObject, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 import { initShaderProgram, initBuffers, initTexture } from '../lib/WebGL2HelperFunctions';
 import areaVertexShaderSource from '../shaders/area.vert';
 import areaFragmentShaderSource from '../shaders/area.frag';
 
 function useRGBScalerCanvas(
-  videoRef: RefObject<HTMLVideoElement> | null,
+  video: HTMLVideoElement | null,
   maxCanvasWidth: number,
   maxCanvasHeight: number,
   dar: number | undefined,
   par: number | undefined,
+  integerScaling: boolean
 ) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
@@ -17,131 +18,106 @@ function useRGBScalerCanvas(
   let animationFrame: number;
 
   useEffect(() => {
-    const video = videoRef?.current;
     if (!video || !canvas || !gl) {
       return;
     }
-    const aspect = dar ? dar : (par ? par : 1) * video.videoWidth / video.videoHeight;
-    console.log(aspect);
-    console.log(maxCanvasWidth);
-    console.log(maxCanvasHeight);
-    console.log(video.videoWidth);
-    console.log(video.videoHeight);
-    const scaleFactor = Math.min(maxCanvasHeight / video.videoHeight, maxCanvasWidth / (video.videoHeight * aspect));
-    canvas.width = Math.round(video.videoHeight * scaleFactor * aspect * devicePixelRatio);
-    canvas.height = Math.round(video.videoHeight * scaleFactor * devicePixelRatio);
-    canvas.style.width = Math.round(video.videoHeight * scaleFactor * aspect) + "px";
-    canvas.style.height = Math.round(video.videoHeight * scaleFactor) + "px";
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-  }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, videoRef]);
+    const aspect = dar ?? (((par || 1) * video.videoWidth) / video.videoHeight);
+    let scaleFactor = Math.min(
+      (maxCanvasHeight * devicePixelRatio) / video.videoHeight,
+      (maxCanvasWidth * devicePixelRatio) / (video.videoHeight * aspect)
+    );
+    scaleFactor = integerScaling ? Math.floor(scaleFactor) : scaleFactor;
+    const cssPixelHeight = video.videoHeight * scaleFactor;
+    const cssPixelWidth = cssPixelHeight * aspect;
+    canvas.width = Math.round(cssPixelWidth);
+    canvas.height = Math.round(cssPixelHeight);
+    canvas.style.width = `${Math.round(cssPixelWidth / devicePixelRatio)}px`;
+    canvas.style.height = `${Math.round(cssPixelHeight / devicePixelRatio)}px`;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, dar, par, integerScaling, video]);
 
-  const canvasRef = useCallback((currentCanvas: HTMLCanvasElement) => {
-    setCanvas(currentCanvas);
-    if (!currentCanvas || !videoRef) {
-      return;
-    }
-    const video = videoRef.current;
-    if (!video) {
-      return;
-    }
-    const currentGl = currentCanvas.getContext('webgl2');
-    if (!currentGl) {
-      alert('Unable to initialize WebGL. Your browser or machine may not support it.');
-      return;
-    }
-    setGl(currentGl);
-
-    const shaderProgram = initShaderProgram(currentGl, areaVertexShaderSource, areaFragmentShaderSource);
-    if (!shaderProgram) {
-      return;
-    }
-    const programInfo = {
-      program: shaderProgram,
-      attribLocations: {
-        vertexPosition: currentGl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-        textureCoord: currentGl.getAttribLocation(shaderProgram, 'aTextureCoord'),
-      },
-      uniformLocations: {
-        uSampler: currentGl.getUniformLocation(shaderProgram, 'uSampler'),
-        uBaseDimension: currentGl.getUniformLocation(shaderProgram, 'uBaseDimension'),
-        uBaseDimensionI: currentGl.getUniformLocation(shaderProgram, 'uBaseDimensionI'),
+  const canvasRef = useCallback(
+    (currentCanvas: HTMLCanvasElement) => {
+      setCanvas(currentCanvas);
+      if (!currentCanvas || !video) {
+        return;
       }
-    };
-    const buffers = initBuffers(currentGl);
-    setTexture(initTexture(currentGl));
+      const currentGl = currentCanvas.getContext('webgl2');
+      if (!currentGl) {
+        alert('Unable to initialize WebGL. Your browser or machine may not support it.');
+        return;
+      }
+      setGl(currentGl);
 
-    {
-      const numComponents = 3;
-      const type = currentGl.FLOAT;
-      const normalize = false;
-      const stride = 0;
-      const offset = 0;
+      const shaderProgram = initShaderProgram(currentGl, areaVertexShaderSource, areaFragmentShaderSource);
+      if (!shaderProgram) {
+        return;
+      }
+      const programInfo = {
+        program: shaderProgram,
+        attribLocations: {
+          vertexPosition: currentGl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+          textureCoord: currentGl.getAttribLocation(shaderProgram, 'aTextureCoord'),
+        },
+        uniformLocations: {
+          uSampler: currentGl.getUniformLocation(shaderProgram, 'uSampler'),
+          uBaseDimension: currentGl.getUniformLocation(shaderProgram, 'uBaseDimension'),
+          uBaseDimensionI: currentGl.getUniformLocation(shaderProgram, 'uBaseDimensionI'),
+        },
+      };
+      const buffers = initBuffers(currentGl);
+      setTexture(initTexture(currentGl));
       currentGl.bindBuffer(currentGl.ARRAY_BUFFER, buffers.position);
       currentGl.vertexAttribPointer(
         programInfo.attribLocations.vertexPosition,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-      currentGl.enableVertexAttribArray(
-        programInfo.attribLocations.vertexPosition);
-    }
-    {
-      const numComponents = 2;
-      const type = currentGl.FLOAT;
-      const normalize = false;
-      const stride = 0;
-      const offset = 0;
+        3,
+        currentGl.FLOAT,
+        false,
+        0,
+        0
+      );
+      currentGl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
       currentGl.bindBuffer(currentGl.ARRAY_BUFFER, buffers.textureCoord);
       currentGl.vertexAttribPointer(
         programInfo.attribLocations.textureCoord,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-      currentGl.enableVertexAttribArray(
-        programInfo.attribLocations.textureCoord);
-    }
-
-    currentGl.bindBuffer(currentGl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-    currentGl.useProgram(programInfo.program);
-    currentGl.activeTexture(currentGl.TEXTURE0);
-    currentGl.uniform1i(programInfo.uniformLocations.uSampler, 0);
-    currentGl.pixelStorei(currentGl.UNPACK_FLIP_Y_WEBGL, true);
-    currentGl.uniform2f(programInfo.uniformLocations.uBaseDimension, video.videoWidth, video.videoHeight);
-    currentGl.uniform2f(programInfo.uniformLocations.uBaseDimensionI, 1 / video.videoWidth, 1 / video.videoHeight);
-  }, [videoRef]);
-
-  function drawScene() {
-    gl?.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-  }
-  
-  function updateTexture() {
-    gl?.bindTexture(gl.TEXTURE_2D, texture);
-    if (!videoRef?.current) {
-      return;
-    }
-    gl?.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, videoRef.current);
-  }
+        2,
+        currentGl.FLOAT,
+        false,
+        0,
+        0
+      );
+      currentGl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
+      currentGl.bindBuffer(currentGl.ELEMENT_ARRAY_BUFFER, buffers.indices);
+      currentGl.useProgram(programInfo.program);
+      currentGl.activeTexture(currentGl.TEXTURE0);
+      currentGl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+      currentGl.pixelStorei(currentGl.UNPACK_FLIP_Y_WEBGL, true);
+      currentGl.uniform2f(programInfo.uniformLocations.uBaseDimension, video.videoWidth, video.videoHeight);
+      currentGl.uniform2f(programInfo.uniformLocations.uBaseDimensionI, 1 / video.videoWidth, 1 / video.videoHeight);
+    },
+    [video]
+  );
 
   function render() {
-    updateTexture();
-    drawScene();
+    if (!video || !gl) {
+      return;
+    }
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
     animationFrame = requestAnimationFrame(render);
   }
 
   function handlePlayPauseClick() {
-    setIsPlaying(currentIsPlaying => {
+    setIsPlaying((currentIsPlaying) => {
       if (currentIsPlaying) {
-        videoRef?.current?.pause();
+        video?.pause();
         cancelAnimationFrame(animationFrame);
       } else {
-        videoRef?.current?.play();
+        video?.play();
         animationFrame = requestAnimationFrame(render);
       }
-      return !currentIsPlaying
+      return !currentIsPlaying;
     });
   }
 
@@ -149,7 +125,7 @@ function useRGBScalerCanvas(
     isPlaying,
     handlePlayPauseClick,
     canvasRef,
-  }
+  };
 }
 
 export default useRGBScalerCanvas;

@@ -1,1 +1,1 @@
-export { default } from "./RGBScaler";
+export { default } from './RGBScaler';

@@ -1,12 +1,12 @@
-import { ButtonHTMLAttributes, RefObject, useState } from "react";
+import { ButtonHTMLAttributes, RefObject, useState } from 'react';
 
 interface MuteButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  videoRef: RefObject<HTMLVideoElement> | null,
+  videoRef: RefObject<HTMLVideoElement> | null;
 }
 
 function MuteButton(props: MuteButtonProps) {
   const { videoRef } = props;
-  const [muteLabel, setMuteLabel] = useState("Mute");
+  const [muteLabel, setMuteLabel] = useState('Mute');
 
   const onMuteClick: React.MouseEventHandler<HTMLButtonElement> = () => {
     if (!videoRef || !videoRef.current) {
@@ -14,16 +14,18 @@ function MuteButton(props: MuteButtonProps) {
     }
     if (videoRef.current.muted) {
       videoRef.current.muted = false;
-      setMuteLabel("Mute")
+      setMuteLabel('Mute');
     } else {
       videoRef.current.muted = true;
-      setMuteLabel("Unmute");
+      setMuteLabel('Unmute');
     }
-  }
+  };
 
   return (
-    <button type="button" id="mute" onClick={onMuteClick}>{muteLabel}</button>
-  )
+    <button type="button" id="mute" onClick={onMuteClick}>
+      {muteLabel}
+    </button>
+  );
 }
 
 export default MuteButton;

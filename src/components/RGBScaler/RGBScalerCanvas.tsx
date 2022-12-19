@@ -2,25 +2,36 @@ import { ButtonHTMLAttributes, CanvasHTMLAttributes, memo, RefObject } from 'rea
 import useRGBScalerCanvas from '../../hooks/useRGBScalerCanvas';
 
 interface RGBScalerCanvasProps {
-  videoRef: RefObject<HTMLVideoElement> | null,
-  canvasProps?: CanvasHTMLAttributes<HTMLCanvasElement>,
-  playPauseButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>,
-  maxCanvasWidth: number,
-  maxCanvasHeight: number,
-  dar?: number,
-  par?: number,
+  video: HTMLVideoElement | null;
+  canvasProps?: CanvasHTMLAttributes<HTMLCanvasElement>;
+  playPauseButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>;
+  maxCanvasWidth: number;
+  maxCanvasHeight: number;
+  dar?: number;
+  par?: number;
+  integerScaling: boolean;
 }
 
-const RGBScalerCanvas = memo(function RGBScalerCanvas(props: RGBScalerCanvasProps)  {
-  const { videoRef, canvasProps, playPauseButtonProps, maxCanvasWidth, maxCanvasHeight, dar, par } = props;
-  const { isPlaying, handlePlayPauseClick, canvasRef } = useRGBScalerCanvas(videoRef, maxCanvasWidth, maxCanvasHeight, dar, par);
-  
+const RGBScalerCanvas = memo((props: RGBScalerCanvasProps) => {
+  const { video, canvasProps, playPauseButtonProps, maxCanvasWidth, maxCanvasHeight, dar, par, integerScaling } =
+    props;
+  const { isPlaying, handlePlayPauseClick, canvasRef } = useRGBScalerCanvas(
+    video,
+    maxCanvasWidth,
+    maxCanvasHeight,
+    dar,
+    par,
+    integerScaling
+  );
+
   return (
     <>
-      <button onClick={handlePlayPauseClick} {...playPauseButtonProps}>{isPlaying ? "Pause" : "Play"}</button>
-      <canvas ref={canvasRef} style={{display: "block"}} {...canvasProps} />
+      <button type="button" onClick={handlePlayPauseClick} {...playPauseButtonProps}>
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+      <canvas ref={canvasRef} style={{ display: 'block' }} {...canvasProps} />
     </>
-  )
+  );
 });
 
 export default RGBScalerCanvas;
