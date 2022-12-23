@@ -7,10 +7,10 @@ import {
   useState,
   VideoHTMLAttributes,
 } from 'react';
+import useRGBScaler from '../../hooks/useRGBScaler';
 import MuteButton from '../controls/MuteButton';
 import SeekBar from '../controls/SeekBar';
 import VolumeBar from '../controls/VolumeBar';
-import RGBScalerCanvas from './RGBScalerCanvas';
 
 interface CustomVolumeBarProps extends InputHTMLAttributes<HTMLInputElement> {
   volume: number;
@@ -48,12 +48,40 @@ export default function RGBScaler(props: RGBScalerProps) {
   } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [seekTime, setSeekTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const { canvasRef, render, cancelRender } = useRGBScaler(
+    videoRef.current,
+    maxCanvasWidth,
+    maxCanvasHeight,
+    dar,
+    par,
+    integerScaling
+  );
 
   const onVideoTimeUpdate: React.ReactEventHandler<HTMLVideoElement> = (event) => {
     if (event.currentTarget.duration > 0) {
       setSeekTime((event.currentTarget.currentTime * 100) / event.currentTarget.duration);
     }
   };
+
+  function handlePlayPauseClick() {
+    setIsPlaying((currentIsPlaying) => {
+      if (currentIsPlaying) {
+        videoRef.current?.pause();
+        cancelRender();
+      } else {
+        videoRef.current?.play();
+        requestAnimationFrame(render);
+      }
+      return !currentIsPlaying;
+    });
+  }
+
+  function handleVideoLoaded() {
+    cancelRender();
+    videoRef.current?.pause();
+    setIsPlaying(false);
+  }
 
   return (
     <div style={{ display: 'inline-block', ...style }} {...rest}>
@@ -63,21 +91,16 @@ export default function RGBScaler(props: RGBScalerProps) {
         playsInline
         style={{ display: 'none' }}
         onTimeUpdate={onVideoTimeUpdate}
+        onLoadedMetadata={handleVideoLoaded}
         {...videoProps}
       />
       <SeekBar videoRef={videoRef} seekTime={seekTime} {...seekBarProps} />
       <MuteButton videoRef={videoRef} {...muteButtonProps} />
       <VolumeBar videoRef={videoRef} {...volumeBarProps} />
-      <RGBScalerCanvas
-        video={videoRef.current}
-        playPauseButtonProps={playPauseButtonProps}
-        canvasProps={canvasProps}
-        maxCanvasWidth={maxCanvasWidth}
-        maxCanvasHeight={maxCanvasHeight}
-        dar={dar}
-        par={par}
-        integerScaling={integerScaling}
-      />
+      <button type="button" onClick={handlePlayPauseClick} {...playPauseButtonProps}>
+        {isPlaying ? 'Pause' : 'Play'}
+      </button>
+      <canvas ref={canvasRef} style={{ display: 'block' }} {...canvasProps} />
     </div>
   );
 }

@@ -11,13 +11,12 @@ function useRGBScalerCanvas(
   par: number | undefined,
   integerScaling: boolean
 ) {
-  const [isPlaying, setIsPlaying] = useState(false);
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
   const [texture, setTexture] = useState<WebGLTexture | null>(null);
   let animationFrame: number;
 
-  useEffect(() => {
+  const handleResize = useCallback(() => {
     if (!video || !canvas || !gl) {
       return;
     }
@@ -35,6 +34,10 @@ function useRGBScalerCanvas(
     canvas.style.height = `${Math.round(cssPixelHeight / devicePixelRatio)}px`;
     gl.viewport(0, 0, canvas.width, canvas.height);
   }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, dar, par, integerScaling, video]);
+
+  useEffect(() => {
+    handleResize();
+  });
 
   const canvasRef = useCallback(
     (currentCanvas: HTMLCanvasElement) => {
@@ -108,23 +111,15 @@ function useRGBScalerCanvas(
     animationFrame = requestAnimationFrame(render);
   }
 
-  function handlePlayPauseClick() {
-    setIsPlaying((currentIsPlaying) => {
-      if (currentIsPlaying) {
-        video?.pause();
-        cancelAnimationFrame(animationFrame);
-      } else {
-        video?.play();
-        animationFrame = requestAnimationFrame(render);
-      }
-      return !currentIsPlaying;
-    });
+  function cancelRender() {
+    cancelAnimationFrame(animationFrame);
   }
 
   return {
-    isPlaying,
-    handlePlayPauseClick,
     canvasRef,
+    handleResize,
+    render,
+    cancelRender,
   };
 }
 
