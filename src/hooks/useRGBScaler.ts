@@ -14,10 +14,11 @@ function useRGBScalerCanvas(
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
   const [texture, setTexture] = useState<WebGLTexture | null>(null);
-  let animationFrame: number;
+  const [shaderProgram, setShaderProgram] = useState<WebGLProgram | null>(null);
+  const [animationFrame, setAnimationFrame] = useState(0);
 
-  const handleResize = useCallback(() => {
-    if (!video || !canvas || !gl) {
+  function handleResize() {
+    if (!video || !canvas || !gl || !shaderProgram) {
       return;
     }
     const aspect = dar ?? (((par || 1) * video.videoWidth) / video.videoHeight);
@@ -33,11 +34,13 @@ function useRGBScalerCanvas(
     canvas.style.width = `${Math.round(cssPixelWidth / devicePixelRatio)}px`;
     canvas.style.height = `${Math.round(cssPixelHeight / devicePixelRatio)}px`;
     gl.viewport(0, 0, canvas.width, canvas.height);
-  }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, dar, par, integerScaling, video]);
-
+    gl.uniform2f(gl.getUniformLocation(shaderProgram, 'uBaseDimension'), video.videoWidth, video.videoHeight);
+    gl.uniform2f(gl.getUniformLocation(shaderProgram, 'uBaseDimensionI'), 1 / video.videoWidth, 1 / video.videoHeight);
+  } 
+    
   useEffect(() => {
     handleResize();
-  });
+  }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, dar, par, integerScaling, video]);
 
   const canvasRef = useCallback(
     (currentCanvas: HTMLCanvasElement) => {
@@ -52,20 +55,21 @@ function useRGBScalerCanvas(
       }
       setGl(currentGl);
 
-      const shaderProgram = initShaderProgram(currentGl, areaVertexShaderSource, areaFragmentShaderSource);
-      if (!shaderProgram) {
+      const currentShaderProgram = initShaderProgram(currentGl, areaVertexShaderSource, areaFragmentShaderSource);
+      if (!currentShaderProgram) {
         return;
       }
+      setShaderProgram(currentShaderProgram);
       const programInfo = {
-        program: shaderProgram,
+        program: currentShaderProgram,
         attribLocations: {
-          vertexPosition: currentGl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-          textureCoord: currentGl.getAttribLocation(shaderProgram, 'aTextureCoord'),
+          vertexPosition: currentGl.getAttribLocation(currentShaderProgram, 'aVertexPosition'),
+          textureCoord: currentGl.getAttribLocation(currentShaderProgram, 'aTextureCoord'),
         },
         uniformLocations: {
-          uSampler: currentGl.getUniformLocation(shaderProgram, 'uSampler'),
-          uBaseDimension: currentGl.getUniformLocation(shaderProgram, 'uBaseDimension'),
-          uBaseDimensionI: currentGl.getUniformLocation(shaderProgram, 'uBaseDimensionI'),
+          uSampler: currentGl.getUniformLocation(currentShaderProgram, 'uSampler'),
+          uBaseDimension: currentGl.getUniformLocation(currentShaderProgram, 'uBaseDimension'),
+          uBaseDimensionI: currentGl.getUniformLocation(currentShaderProgram, 'uBaseDimensionI'),
         },
       };
       const buffers = initBuffers(currentGl);
@@ -108,7 +112,7 @@ function useRGBScalerCanvas(
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-    animationFrame = requestAnimationFrame(render);
+    setAnimationFrame(requestAnimationFrame(render));
   }
 
   function cancelRender() {
@@ -117,9 +121,9 @@ function useRGBScalerCanvas(
 
   return {
     canvasRef,
-    handleResize,
     render,
     cancelRender,
+    handleResize,
   };
 }
 

@@ -1,7 +1,7 @@
-import { InputHTMLAttributes, RefObject } from 'react';
+import { InputHTMLAttributes } from 'react';
 
 interface SeekBarProps extends InputHTMLAttributes<HTMLInputElement> {
-  videoRef: RefObject<HTMLVideoElement> | null;
+  videoRef: HTMLVideoElement | null;
   seekTime: number;
 }
 
@@ -9,24 +9,24 @@ function SeekBar(props: SeekBarProps) {
   const { videoRef, seekTime } = props;
 
   const onSeekBarChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-    if (!videoRef || !videoRef.current) {
+    if (!videoRef || !videoRef) {
       return;
     }
-    videoRef.current.currentTime = videoRef.current.duration * (parseInt(event.currentTarget.value, 10) / 100);
+    videoRef.currentTime = videoRef.duration * (parseInt(event.currentTarget.value, 10) / 100);
   };
 
   const onSeekBarMouseDown: React.MouseEventHandler<HTMLInputElement> = () => {
-    if (!videoRef || !videoRef.current) {
+    if (!videoRef || !videoRef) {
       return;
     }
-    videoRef.current.pause();
+    videoRef.pause();
   };
 
   const onSeekBarMouseUp: React.MouseEventHandler<HTMLInputElement> = () => {
-    if (!videoRef || !videoRef.current) {
+    if (!videoRef || !videoRef) {
       return;
     }
-    videoRef.current.play();
+    videoRef.play();
   };
 
   return (

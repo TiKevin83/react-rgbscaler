@@ -1,8 +1,8 @@
-import { InputHTMLAttributes, RefObject, useEffect, useState } from 'react';
+import { InputHTMLAttributes, useEffect, useState } from 'react';
 
 interface VolumeBarProps extends InputHTMLAttributes<HTMLInputElement> {
   volume?: number;
-  videoRef: RefObject<HTMLVideoElement> | null;
+  videoRef: HTMLVideoElement | null;
 }
 
 function VolumeBar(props: VolumeBarProps) {
@@ -10,19 +10,19 @@ function VolumeBar(props: VolumeBarProps) {
   const [volume, setVolume] = useState(startingVolume || 1);
 
   const onVolumeBarChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
-    if (!videoRef || !videoRef.current) {
+    if (!videoRef || !videoRef) {
       return;
     }
     const newVolume = parseFloat(event.currentTarget.value);
-    videoRef.current.volume = newVolume;
+    videoRef.volume = newVolume;
     setVolume(newVolume);
   };
 
   useEffect(() => {
-    if (!videoRef || !videoRef.current) {
+    if (!videoRef || !videoRef) {
       return;
     }
-    videoRef.current.volume = volume;
+    videoRef.volume = volume;
   });
 
   return (

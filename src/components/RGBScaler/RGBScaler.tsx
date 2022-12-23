@@ -3,7 +3,6 @@ import {
   CanvasHTMLAttributes,
   HTMLAttributes,
   InputHTMLAttributes,
-  useRef,
   useState,
   VideoHTMLAttributes,
 } from 'react';
@@ -46,11 +45,11 @@ export default function RGBScaler(props: RGBScalerProps) {
     style,
     ...rest
   } = props;
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
   const [seekTime, setSeekTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const { canvasRef, render, cancelRender } = useRGBScaler(
-    videoRef.current,
+  const { canvasRef, render, cancelRender, handleResize } = useRGBScaler(
+    videoRef,
     maxCanvasWidth,
     maxCanvasHeight,
     dar,
@@ -67,10 +66,10 @@ export default function RGBScaler(props: RGBScalerProps) {
   function handlePlayPauseClick() {
     setIsPlaying((currentIsPlaying) => {
       if (currentIsPlaying) {
-        videoRef.current?.pause();
+        videoRef?.pause();
         cancelRender();
       } else {
-        videoRef.current?.play();
+        videoRef?.play();
         requestAnimationFrame(render);
       }
       return !currentIsPlaying;
@@ -79,14 +78,15 @@ export default function RGBScaler(props: RGBScalerProps) {
 
   function handleVideoLoaded() {
     cancelRender();
-    videoRef.current?.pause();
+    videoRef?.pause();
     setIsPlaying(false);
+    handleResize();
   }
 
   return (
     <div style={{ display: 'inline-block', ...style }} {...rest}>
       <video
-        ref={videoRef}
+        ref={newVideoRef => setVideoRef(newVideoRef)}
         crossOrigin="anonymous"
         playsInline
         style={{ display: 'none' }}
