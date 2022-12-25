@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { initShaderProgram, initBuffers, initTexture } from '../lib/WebGL2HelperFunctions';
-import areaVertexShaderSource from '../shaders/area.vert';
+import vertexShaderSource from '../shaders/all.vert';
 import areaFragmentShaderSource from '../shaders/area.frag';
+import crtFragmentShaderSource from '../shaders/crt.frag';
 
 function useRGBScalerCanvas(
   video: HTMLVideoElement | null,
@@ -9,7 +10,8 @@ function useRGBScalerCanvas(
   maxCanvasHeight: number,
   dar: number | undefined,
   par: number | undefined,
-  integerScaling: boolean
+  integerScaling: boolean,
+  crtMode: boolean,
 ) {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
@@ -36,8 +38,12 @@ function useRGBScalerCanvas(
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.uniform2f(gl.getUniformLocation(shaderProgram, 'uBaseDimension'), video.videoWidth, video.videoHeight);
     gl.uniform2f(gl.getUniformLocation(shaderProgram, 'uBaseDimensionI'), 1 / video.videoWidth, 1 / video.videoHeight);
-  } 
-    
+  }
+
+  function fullscreenCanvas() {
+    canvas?.requestFullscreen();
+  }
+
   useEffect(() => {
     handleResize();
   }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, dar, par, integerScaling, video]);
@@ -55,7 +61,7 @@ function useRGBScalerCanvas(
       }
       setGl(currentGl);
 
-      const currentShaderProgram = initShaderProgram(currentGl, areaVertexShaderSource, areaFragmentShaderSource);
+      const currentShaderProgram = initShaderProgram(currentGl, vertexShaderSource, crtMode ? crtFragmentShaderSource : areaFragmentShaderSource);
       if (!currentShaderProgram) {
         return;
       }
@@ -102,7 +108,7 @@ function useRGBScalerCanvas(
       currentGl.uniform2f(programInfo.uniformLocations.uBaseDimension, video.videoWidth, video.videoHeight);
       currentGl.uniform2f(programInfo.uniformLocations.uBaseDimensionI, 1 / video.videoWidth, 1 / video.videoHeight);
     },
-    [video]
+    [video, crtMode]
   );
 
   function render() {
@@ -124,6 +130,7 @@ function useRGBScalerCanvas(
     render,
     cancelRender,
     handleResize,
+    fullscreenCanvas,
   };
 }
 

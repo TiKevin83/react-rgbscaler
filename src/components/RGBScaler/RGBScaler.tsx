@@ -17,6 +17,7 @@ interface CustomVolumeBarProps extends InputHTMLAttributes<HTMLInputElement> {
 
 interface RGBScalerProps extends HTMLAttributes<HTMLDivElement> {
   playPauseButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>;
+  fullscreenButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>;
   seekBarProps?: InputHTMLAttributes<HTMLInputElement>;
   muteButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>;
   volumeBarProps?: CustomVolumeBarProps;
@@ -27,11 +28,13 @@ interface RGBScalerProps extends HTMLAttributes<HTMLDivElement> {
   dar?: number;
   par?: number;
   integerScaling?: boolean;
+  crtMode?: boolean;
 }
 
 export default function RGBScaler(props: RGBScalerProps) {
   const {
     playPauseButtonProps,
+    fullscreenButtonProps,
     seekBarProps,
     muteButtonProps,
     volumeBarProps,
@@ -42,19 +45,21 @@ export default function RGBScaler(props: RGBScalerProps) {
     dar,
     par,
     integerScaling = false,
+    crtMode = false,
     style,
     ...rest
   } = props;
   const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
   const [seekTime, setSeekTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const { canvasRef, render, cancelRender, handleResize } = useRGBScaler(
+  const { canvasRef, render, cancelRender, handleResize, fullscreenCanvas } = useRGBScaler(
     videoRef,
     maxCanvasWidth,
     maxCanvasHeight,
     dar,
     par,
-    integerScaling
+    integerScaling,
+    crtMode,
   );
 
   const onVideoTimeUpdate: React.ReactEventHandler<HTMLVideoElement> = (event) => {
@@ -74,6 +79,10 @@ export default function RGBScaler(props: RGBScalerProps) {
       }
       return !currentIsPlaying;
     });
+  }
+
+  function handleFullscreenClick() {
+    fullscreenCanvas();
   }
 
   function handleVideoLoaded() {
@@ -100,6 +109,7 @@ export default function RGBScaler(props: RGBScalerProps) {
       <button type="button" onClick={handlePlayPauseClick} {...playPauseButtonProps}>
         {isPlaying ? 'Pause' : 'Play'}
       </button>
+      <button type="button" onClick={handleFullscreenClick} {...fullscreenButtonProps} >FullScreen</button>
       <canvas ref={canvasRef} style={{ display: 'block' }} {...canvasProps} />
     </div>
   );
