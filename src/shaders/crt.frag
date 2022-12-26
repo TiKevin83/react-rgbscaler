@@ -22,14 +22,12 @@ float hardScan=-8.0;
 // Hardness of pixels in scanline.
 // -2.0 = soft
 // -4.0 = hard
-const float hardPix=-2.0;
+const float hardPix=-4.0;
 
 // Hardness of shadow mask in scanline.
 // 0.5 = hard
 // 3.0 = soft
 const float hardMask=2.0;
-
-const vec3 compos = vec3(1.0/6.0,1.0/2.0,5.0/6.0);
 
 // Display warp.
 // 0.0 = none
@@ -45,7 +43,7 @@ vec3 Fetch(vec2 pos,vec2 off)
   pos=floor(pos * uBaseDimension + off) * uBaseDimensionI;
   if (pos.x<0.0 || pos.x>=1.0 || pos.y<0.0 || pos.y>=1.0)
     return vec3(0.0,0.0,0.0);
-  return texture(uSampler,pos.xy).rgb;
+  return texture(uSampler,pos.xy + vec2(uBaseDimensionI.x * .5, uBaseDimensionI.y * .5)).rgb;
 }
 
 // Distance in emulated pixels to nearest texel.
@@ -109,21 +107,25 @@ vec3 Tri(vec2 pos)
 }
 
 // Distortion of scanlines, and end of screen alpha.
-vec2 Warp(vec2 pos)
+vec2 Warp()
 {
-  pos=pos*2.0-1.0;
+  vec2 pos = vTextureCoord.xy*2.0-1.0;
   pos*=1.0+vec2(pos.y*pos.y,pos.x*pos.x)*warp;
   return pos*0.5+0.5;
 }
 
-vec3 Mask(float x)
+vec3 Mask()
 {
-  vec3 v  = clamp((fract(x)-compos)*hardMask,-1.0/3.0,1.0/3.0);
-  return 2.0/3.0+abs(v);
+  float x = fract(vTextureCoord.x*uBaseDimension.x);
+  return vec3(
+    float(x <= 1.0/3.0),
+    float(x > 1.0/3.0 && x <= 2.0/3.0 ),
+    float(x >= 2.0/3.0 )
+  );
 }
 
 void main()
 {
-  vec3 temp = Tri(Warp(vTextureCoord.xy))*Mask(vTextureCoord.x*uBaseDimension.x);
+  vec3 temp = Tri(Warp())*Mask();
   fragColor = vec4(temp.r, temp.g, temp.b, 1.0);
 }
