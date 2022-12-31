@@ -52,6 +52,8 @@ export default function RGBScaler(props: RGBScalerProps) {
   const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
   const [seekTime, setSeekTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [maskIntensity, setMaskIntensity] = useState(0.3);
+  const [scanlineIntensity, setScanlineIntensity] = useState(0.8);
   const { canvasRef, render, cancelRender, handleResize, fullscreenCanvas } = useRGBScaler(
     videoRef,
     maxCanvasWidth,
@@ -60,6 +62,8 @@ export default function RGBScaler(props: RGBScalerProps) {
     par,
     integerScaling,
     crtMode,
+    maskIntensity,
+    scanlineIntensity,
   );
 
   const onVideoTimeUpdate: React.ReactEventHandler<HTMLVideoElement> = (event) => {
@@ -92,8 +96,23 @@ export default function RGBScaler(props: RGBScalerProps) {
     handleResize();
   }
 
+  function handleVideoEnded() {
+    cancelRender();
+    setIsPlaying(false);
+  }
+
   return (
-    <div style={{ display: 'inline-block', ...style }} {...rest}>
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '1em',
+        ...style,
+      }}
+      {...rest}
+    >
       <video
         ref={newVideoRef => setVideoRef(newVideoRef)}
         crossOrigin="anonymous"
@@ -101,14 +120,39 @@ export default function RGBScaler(props: RGBScalerProps) {
         style={{ display: 'none' }}
         onTimeUpdate={onVideoTimeUpdate}
         onLoadedMetadata={handleVideoLoaded}
+        onEnded={handleVideoEnded}
         {...videoProps}
       />
-      <SeekBar videoRef={videoRef} seekTime={seekTime} {...seekBarProps} />
-      <MuteButton videoRef={videoRef} {...muteButtonProps} />
-      <VolumeBar videoRef={videoRef} {...volumeBarProps} />
       <button type="button" onClick={handlePlayPauseClick} {...playPauseButtonProps}>
         {isPlaying ? 'Pause' : 'Play'}
       </button>
+      <SeekBar videoRef={videoRef} seekTime={seekTime} {...seekBarProps} />
+      <MuteButton videoRef={videoRef} {...muteButtonProps} />
+      <VolumeBar videoRef={videoRef} {...volumeBarProps} />
+      {crtMode && (
+        <>
+          <label htmlFor="maskIntensity">Slot Mask Intensity</label>
+          <input
+            type="number"
+            id="maskIntensity"
+            value={maskIntensity}
+            min="0.0"
+            step="0.05"
+            onChange={event => setMaskIntensity(parseFloat(event.target.value))}
+            style={{ width: '4em' }}
+          />
+          <label htmlFor="scanlineIntensity">Scanline Intensity</label>
+          <input
+            type="number"
+            id="scanlineIntensity"
+            value={scanlineIntensity}
+            min="0.0"
+            step="0.05"
+            onChange={event => setScanlineIntensity(parseFloat(event.target.value))}
+            style={{ width: '4em' }}
+          />
+        </>
+      )}
       <button type="button" onClick={handleFullscreenClick} {...fullscreenButtonProps} >FullScreen</button>
       <canvas ref={canvasRef} style={{ display: 'block' }} {...canvasProps} />
     </div>

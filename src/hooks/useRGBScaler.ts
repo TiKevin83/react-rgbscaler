@@ -12,10 +12,11 @@ function useRGBScalerCanvas(
   par: number | undefined,
   integerScaling: boolean,
   crtMode: boolean,
+  maskIntensity: number,
+  scanlineIntensity: number,
 ) {
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
-  const [texture, setTexture] = useState<WebGLTexture | null>(null);
   const [shaderProgram, setShaderProgram] = useState<WebGLProgram | null>(null);
   const [animationFrame, setAnimationFrame] = useState(0);
 
@@ -48,6 +49,14 @@ function useRGBScalerCanvas(
     handleResize();
   }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, dar, par, integerScaling, video]);
 
+  useEffect(() => {
+    if (!gl || !shaderProgram || !crtMode) {
+      return;
+    }
+    gl.uniform1f(gl.getUniformLocation(shaderProgram, 'maskIntensity'), maskIntensity);
+    gl.uniform1f(gl.getUniformLocation(shaderProgram, 'scanlineIntensity'), scanlineIntensity);
+  }, [maskIntensity, scanlineIntensity, crtMode]);
+
   const canvasRef = useCallback(
     (currentCanvas: HTMLCanvasElement) => {
       setCanvas(currentCanvas);
@@ -76,10 +85,12 @@ function useRGBScalerCanvas(
           uSampler: currentGl.getUniformLocation(currentShaderProgram, 'uSampler'),
           uBaseDimension: currentGl.getUniformLocation(currentShaderProgram, 'uBaseDimension'),
           uBaseDimensionI: currentGl.getUniformLocation(currentShaderProgram, 'uBaseDimensionI'),
+          maskIntensity: currentGl.getUniformLocation(currentShaderProgram, 'maskIntensity'),
+          scanlineIntensity: currentGl.getUniformLocation(currentShaderProgram, 'scanlineIntensity'),
         },
       };
       const buffers = initBuffers(currentGl);
-      setTexture(initTexture(currentGl));
+      initTexture(currentGl);
       currentGl.bindBuffer(currentGl.ARRAY_BUFFER, buffers.position);
       currentGl.vertexAttribPointer(
         programInfo.attribLocations.vertexPosition,
@@ -107,6 +118,8 @@ function useRGBScalerCanvas(
       currentGl.pixelStorei(currentGl.UNPACK_FLIP_Y_WEBGL, true);
       currentGl.uniform2f(programInfo.uniformLocations.uBaseDimension, video.videoWidth, video.videoHeight);
       currentGl.uniform2f(programInfo.uniformLocations.uBaseDimensionI, 1 / video.videoWidth, 1 / video.videoHeight);
+      currentGl.uniform1f(programInfo.uniformLocations.maskIntensity, maskIntensity);
+      currentGl.uniform1f(programInfo.uniformLocations.scanlineIntensity, scanlineIntensity);
     },
     [video, crtMode]
   );
@@ -115,7 +128,6 @@ function useRGBScalerCanvas(
     if (!video || !gl) {
       return;
     }
-    gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
     setAnimationFrame(requestAnimationFrame(render));

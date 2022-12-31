@@ -9,123 +9,58 @@ uniform sampler2D uSampler;
 uniform vec2  uBaseDimension;
 uniform vec2  uBaseDimensionI;
 
-// PUBLIC DOMAIN CRT STYLED SCAN-LINE SHADER
-//   by Timothy Lottes
-// https://www.shadertoy.com/view/XsjSzR
-//   modified (borked) by ultrabrite
+uniform float maskIntensity;
+uniform float scanlineIntensity;
 
-// Hardness of scanline.
-//  -8.0 = soft
-// -16.0 = medium
-float hardScan=-8.0;
+vec2 Area() {
+  vec2 uv = vTextureCoord;
+  vec2 uv_delta = vec2(dFdx(uv.x), dFdy(uv.y));
 
-// Hardness of pixels in scanline.
-// -2.0 = soft
-// -4.0 = hard
-const float hardPix=-4.0;
+  vec2 uv_min = uv - 0.5 * uv_delta;
+  vec2 uv_max = uv_min + uv_delta;
 
-// Hardness of shadow mask in scanline.
-// 0.5 = hard
-// 3.0 = soft
-const float hardMask=2.0;
+  vec2 load_index_first = floor(uv_min * uBaseDimension);
+  vec2 load_index_last = ceil(uv_max * uBaseDimension) - 1.0;
 
-// Display warp.
-// 0.0 = none
-// 1.0/8.0 = extreme
-const vec2 warp=vec2(1.0/24.0,1.0/24.0);
+  if (load_index_first.x < load_index_last.x) {
+    float uv_boundary_x = load_index_last.x * uBaseDimensionI.x;
+    uv.x = ((uv.x - uv_boundary_x) / uv_delta.x) * uBaseDimensionI.x + uv_boundary_x;
+  } else {
+    uv.x = (load_index_first.x + 0.5) * uBaseDimensionI.x;
+  }
+  if (load_index_first.y < load_index_last.y) {
+    float uv_boundary_y = load_index_last.y * uBaseDimensionI.y;
+    uv.y = ((uv.y - uv_boundary_y) / uv_delta.y) * uBaseDimensionI.y + uv_boundary_y;
+  } else {
+    uv.y = (load_index_first.y + 0.5) * uBaseDimensionI.y;
+  }
 
-//------------------------------------------------------------------------
-
-// Nearest emulated sample given floating point position and texel offset.
-// Also zero's off screen.
-vec3 Fetch(vec2 pos,vec2 off)
-{
-  pos=floor(pos * uBaseDimension + off) * uBaseDimensionI;
-  if (pos.x<0.0 || pos.x>=1.0 || pos.y<0.0 || pos.y>=1.0)
-    return vec3(0.0,0.0,0.0);
-  return texture(uSampler,pos.xy + vec2(uBaseDimensionI.x * .5, uBaseDimensionI.y * .5)).rgb;
-}
-
-// Distance in emulated pixels to nearest texel.
-vec2 Dist(vec2 pos)
-{
-  pos=pos * uBaseDimension;
-  return -((pos-floor(pos))-vec2(0.5));
-}
-
-// 1D Gaussian.
-float Gaus(float pos,float scale)
-{
-  return exp2(scale*pos*pos);
-}
-
-// 3-tap Gaussian filter along horz line.
-vec3 Horz3(vec2 pos,float off)
-{
-  mat3 m=mat3(Fetch(pos,vec2(-1.0,off)),
-        Fetch(pos,vec2( 0.0,off)),
-        Fetch(pos,vec2( 1.0,off)));
-  float dst=Dist(pos).x;
-  // Convert distance to weight.
-  vec3 v=vec3(Gaus(dst-1.0,hardPix),
-        Gaus(dst+0.0,hardPix),
-        Gaus(dst+1.0,hardPix));
-    // Return filtered sample.
-    return (m*v)/(v.x+v.y+v.z);
-}
-
-// 5-tap Gaussian filter along horz line.
-vec3 Horz5(vec2 pos,float off)
-{
-  vec3 a=Fetch(pos,vec2(-2.0,off));
-  vec3 b=Fetch(pos,vec2(-1.0,off));
-  vec3 c=Fetch(pos,vec2( 0.0,off));
-  vec3 d=Fetch(pos,vec2( 1.0,off));
-  vec3 e=Fetch(pos,vec2( 2.0,off));
-  float dstx=Dist(pos).x;
-  // Convert distance to weight.
-  float wa=Gaus(dstx-2.0,hardPix);
-  float wb=Gaus(dstx-1.0,hardPix);
-  float wc=Gaus(dstx+0.0,hardPix);
-  float wd=Gaus(dstx+1.0,hardPix);
-  float we=Gaus(dstx+2.0,hardPix);
-  // Return filtered sample.
-  return (a*wa+b*wb+c*wc+d*wd+e*we)/(wa+wb+wc+wd+we);
-}
-
-// Allow nearest three lines to effect pixel.
-vec3 Tri(vec2 pos)
-{
-  mat3 m=mat3(Horz3(pos,-1.0),
-        Horz5(pos, 0.0),
-        Horz3(pos, 1.0));
-  float dsty=Dist(pos).y;
-  vec3 v=vec3(Gaus(dsty-1.0,hardScan),
-        Gaus(dsty+0.0,hardScan),
-        Gaus(dsty+1.0,hardScan));
-  return m*v;
-}
-
-// Distortion of scanlines, and end of screen alpha.
-vec2 Warp()
-{
-  vec2 pos = vTextureCoord.xy*2.0-1.0;
-  pos*=1.0+vec2(pos.y*pos.y,pos.x*pos.x)*warp;
-  return pos*0.5+0.5;
+  return uv;
 }
 
 vec3 Mask()
 {
-  float x = fract(vTextureCoord.x*uBaseDimension.x);
+  float horizontalDistanceIntoPixel = fract(vTextureCoord.x*uBaseDimension.x);
   return vec3(
-    float(x <= 1.0/3.0),
-    float(x > 1.0/3.0 && x <= 2.0/3.0 ),
-    float(x >= 2.0/3.0 )
+    1.0-min(maskIntensity*6.0*min(abs(1.0/6.0 - horizontalDistanceIntoPixel), 1.0/6.0), 1.0),
+    1.0-min(maskIntensity*6.0*min(abs(3.0/6.0 - horizontalDistanceIntoPixel), 1.0/6.0), 1.0),
+    1.0-min(maskIntensity*6.0*min(abs(5.0/6.0 - horizontalDistanceIntoPixel), 1.0/6.0), 1.0)
+  );
+}
+
+vec3 Scanlines()
+{
+  float verticalDistanceIntoPixel = fract(vTextureCoord.y*uBaseDimension.y);
+  float intensity = 1.0-min(scanlineIntensity*2.0*min(abs(0.5 - verticalDistanceIntoPixel), 0.5), 1.0);
+  return vec3(
+    intensity,
+    intensity,
+    intensity
   );
 }
 
 void main()
 {
-  vec3 temp = Tri(Warp())*Mask();
+  vec3 temp = texture(uSampler,Area()).rgb*Mask()*Scanlines();
   fragColor = vec4(temp.r, temp.g, temp.b, 1.0);
 }
