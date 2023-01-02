@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { initShaderProgram, initBuffers, initTexture } from '../lib/WebGL2HelperFunctions';
 import vertexShaderSource from '../shaders/all.vert';
-import areaFragmentShaderSource from '../shaders/area.frag';
 import crtFragmentShaderSource from '../shaders/crt.frag';
 
 function useRGBScalerCanvas(
@@ -11,7 +10,6 @@ function useRGBScalerCanvas(
   dar: number | undefined,
   par: number | undefined,
   integerScaling: boolean,
-  crtMode: boolean,
   maskIntensity: number,
   scanlineIntensity: number,
 ) {
@@ -50,12 +48,12 @@ function useRGBScalerCanvas(
   }, [canvas, gl, maxCanvasHeight, maxCanvasWidth, dar, par, integerScaling, video]);
 
   useEffect(() => {
-    if (!gl || !shaderProgram || !crtMode) {
+    if (!gl || !shaderProgram) {
       return;
     }
     gl.uniform1f(gl.getUniformLocation(shaderProgram, 'maskIntensity'), maskIntensity);
     gl.uniform1f(gl.getUniformLocation(shaderProgram, 'scanlineIntensity'), scanlineIntensity);
-  }, [maskIntensity, scanlineIntensity, crtMode]);
+  }, [maskIntensity, scanlineIntensity]);
 
   const canvasRef = useCallback(
     (currentCanvas: HTMLCanvasElement) => {
@@ -70,7 +68,7 @@ function useRGBScalerCanvas(
       }
       setGl(currentGl);
 
-      const currentShaderProgram = initShaderProgram(currentGl, vertexShaderSource, crtMode ? crtFragmentShaderSource : areaFragmentShaderSource);
+      const currentShaderProgram = initShaderProgram(currentGl, vertexShaderSource, crtFragmentShaderSource);
       if (!currentShaderProgram) {
         return;
       }
@@ -121,7 +119,7 @@ function useRGBScalerCanvas(
       currentGl.uniform1f(programInfo.uniformLocations.maskIntensity, maskIntensity);
       currentGl.uniform1f(programInfo.uniformLocations.scanlineIntensity, scanlineIntensity);
     },
-    [video, crtMode]
+    [video]
   );
 
   function render() {

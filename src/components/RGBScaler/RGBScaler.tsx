@@ -27,8 +27,9 @@ interface RGBScalerProps extends HTMLAttributes<HTMLDivElement> {
   maxCanvasHeight: number;
   dar?: number;
   par?: number;
+  maskIntensity?: number;
+  scanlineIntensity?: number;
   integerScaling?: boolean;
-  crtMode?: boolean;
 }
 
 export default function RGBScaler(props: RGBScalerProps) {
@@ -44,16 +45,15 @@ export default function RGBScaler(props: RGBScalerProps) {
     maxCanvasHeight,
     dar,
     par,
+    maskIntensity = 0,
+    scanlineIntensity = 0,
     integerScaling = false,
-    crtMode = false,
     style,
     ...rest
   } = props;
   const [videoRef, setVideoRef] = useState<HTMLVideoElement | null>(null);
   const [seekTime, setSeekTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [maskIntensity, setMaskIntensity] = useState(0.3);
-  const [scanlineIntensity, setScanlineIntensity] = useState(0.8);
   const { canvasRef, render, cancelRender, handleResize, fullscreenCanvas } = useRGBScaler(
     videoRef,
     maxCanvasWidth,
@@ -61,7 +61,6 @@ export default function RGBScaler(props: RGBScalerProps) {
     dar,
     par,
     integerScaling,
-    crtMode,
     maskIntensity,
     scanlineIntensity,
   );
@@ -129,31 +128,8 @@ export default function RGBScaler(props: RGBScalerProps) {
       <SeekBar videoRef={videoRef} seekTime={seekTime} {...seekBarProps} />
       <MuteButton videoRef={videoRef} {...muteButtonProps} />
       <VolumeBar videoRef={videoRef} {...volumeBarProps} />
-      {crtMode && (
-        <>
-          <label htmlFor="maskIntensity">Slot Mask Intensity</label>
-          <input
-            type="number"
-            id="maskIntensity"
-            value={maskIntensity}
-            min="0.0"
-            step="0.05"
-            onChange={event => setMaskIntensity(parseFloat(event.target.value))}
-            style={{ width: '4em' }}
-          />
-          <label htmlFor="scanlineIntensity">Scanline Intensity</label>
-          <input
-            type="number"
-            id="scanlineIntensity"
-            value={scanlineIntensity}
-            min="0.0"
-            step="0.05"
-            onChange={event => setScanlineIntensity(parseFloat(event.target.value))}
-            style={{ width: '4em' }}
-          />
-        </>
-      )}
       <button type="button" onClick={handleFullscreenClick} {...fullscreenButtonProps} >FullScreen</button>
+      <div style={{flexBasis: "100%", height: 0}} />
       <canvas ref={canvasRef} style={{ display: 'block' }} {...canvasProps} />
     </div>
   );

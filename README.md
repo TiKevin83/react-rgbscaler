@@ -40,11 +40,13 @@ Additionally, install react-rgbscaler as a filepath in your app's package.json b
   videoProps={{ src: '/example.mp4' }}
   maxCanvasWidth={width}
   maxCanvasHeight={height}
-  dar={dar}
-  par={par}
   //optional
   canvasProps={canvasProps}
   playPauseButtonProps={playPauseButtonProps}
+  dar={dar}
+  par={par}
+  maskIntensity={maskIntensity}
+  scanlineIntensity={scanlineIntensity}
 />
 ```
 
@@ -78,6 +80,14 @@ A desired display aspect ratio, in other words this forces a final aspect ratio 
 
 A desired pixel aspect ratio. Setting DAR to anything other than the default 1 will ignore this value. Set this if you want to aspect correct based on a known PAR for your source footage instead of correcting to a desired DAR.
 
+#### `maskIntensity`
+
+The desired intensity of the slot mask effect. This effect treats pixels in the source video as discrete subpixels with a layout similar to a CRT's slot mask. An intensity of 1 fully applies the effect, and 0 disables the effect. Values between 0 and 1 help increase brightness and can look more natural than the perfect slot mask. This effect relies on the video having the original dimensions of the console's output with square pixels and using DAR or PAR to correct the aspect ratio.
+
+#### `scanlineIntensity`
+
+The desired intensity of the scanline effect. This effect recreates gaps between each horizontal line of pixels to recreate the CRT scanline process. An intensity of 0 will not recreate any scanlines and 1 will apply a fully defined gap between lines. As with the slot mask effect, values between 0 and 1 help tune the tradeoff with overall brightness and can look more natural. This effect relies on the video having the original dimensions of the console's output with square pixels and using DAR or PAR to correct the aspect ratio.
+
 #### `integerScaling`
 
 Forces RGBScaler to try to limit its upscaling to the largest integer multiple of the source video's dimensions that will fit within the requested max canvas width and height. This tends to not be as relevant an option with this player because using the intended client side aspect correction by setting DAR or PAR will often necessitate a non-integer width multiple.
@@ -102,10 +112,14 @@ Props to customize the volume bar that controls the volume of the video. A volum
 
 Props to customize the included play/pause button
 
+#### `fullscreenButtonProps`
+
+Props to customize the included fullscreen button
+
 ## Player Details
 
-Under the hood RGBScaler uses an HTML5 video element to deliver frames to a canvas. The `src` provided to the video element must either be on the same site or be hosted on a site that validates CORS anonymously, otherwise the browser will block the canvas from being able to read the video element's frames as a texture due to security measures. By default the proxy video player is hidden to only display the canvas upscale but you can adjust it as needed through videoProps. RGBScaler also contains a basic play/pause button which is necessary to start and stop the canvas' rendering loop. Future updates to the library are intended to finish out the other custom controls for mute, volume, and progress seeking.
+Under the hood RGBScaler uses an HTML5 video element to deliver frames to a canvas. The `src` provided to the video element must either be on the same site or be hosted on a site that validates CORS anonymously, otherwise the browser will block the canvas from being able to read the video element's frames as a texture due to security measures. By default the proxy video player is hidden to only display the canvas upscale but you can adjust it as needed through videoProps. RGBScaler also contains a basic play/pause button which is necessary to start and stop the canvas' rendering loop.
 
 ## Provided Video prerequisites
 
-This technique is intended for use with archival quality low resolution video. Source videos should be compressed either losslessly in 4:4:4 which would be viewable in Chrome, or alternatively they can be encoded in a lossy mode with a low CRF and 4:2:0 at double resolution to maximize compatibility at the cost of much larger video size. The video should not have aspect ratio correction, it should be encoded with square pixels and the intended output aspect ratio adjusted by providing a DAR or PAR to RGBScaler's props.
+This technique is intended for use with archival quality low resolution video. Source videos should be compressed either losslessly in 4:4:4 which would be viewable in Chrome, or alternatively they can be encoded in a lossy mode with a low CRF and 4:2:0 at double resolution to maximize compatibility at the cost of much larger video size and incompatibility with the CRT effects. The video should not have aspect ratio correction, it should be encoded with square pixels and the intended output aspect ratio adjusted by providing a DAR or PAR to RGBScaler's props.

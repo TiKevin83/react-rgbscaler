@@ -12,6 +12,7 @@ uniform vec2  uBaseDimensionI;
 uniform float maskIntensity;
 uniform float scanlineIntensity;
 
+// Area affect from OBS source https://github.com/obsproject/obs-studio/blob/29782cd594be2a5dc52fc79fa20bd0468648c6c5/libobs/data/area.effect#L127
 vec2 Area() {
   vec2 uv = vTextureCoord;
   vec2 uv_delta = vec2(dFdx(uv.x), dFdy(uv.y));
