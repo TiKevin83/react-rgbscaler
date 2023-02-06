@@ -3,6 +3,7 @@ import {
   CanvasHTMLAttributes,
   HTMLAttributes,
   InputHTMLAttributes,
+  SourceHTMLAttributes,
   useState,
   VideoHTMLAttributes,
 } from 'react';
@@ -22,6 +23,7 @@ interface RGBScalerProps extends HTMLAttributes<HTMLDivElement> {
   muteButtonProps?: ButtonHTMLAttributes<HTMLButtonElement>;
   volumeBarProps?: CustomVolumeBarProps;
   videoProps?: VideoHTMLAttributes<HTMLVideoElement>;
+  sourceProps?: SourceHTMLAttributes<HTMLSourceElement>[];
   canvasProps?: CanvasHTMLAttributes<HTMLCanvasElement>;
   maxCanvasWidth: number;
   maxCanvasHeight: number;
@@ -41,6 +43,7 @@ export default function RGBScaler(props: RGBScalerProps) {
     volumeBarProps,
     canvasProps,
     videoProps,
+    sourceProps,
     maxCanvasWidth,
     maxCanvasHeight,
     dar,
@@ -121,7 +124,9 @@ export default function RGBScaler(props: RGBScalerProps) {
         onLoadedMetadata={handleVideoLoaded}
         onEnded={handleVideoEnded}
         {...videoProps}
-      />
+      >
+        {sourceProps ? sourceProps.map((thisSourceProps) => <source key={thisSourceProps.src} {...thisSourceProps} />) : null}
+      </video>
       <button type="button" onClick={handlePlayPauseClick} {...playPauseButtonProps}>
         {isPlaying ? 'Pause' : 'Play'}
       </button>
