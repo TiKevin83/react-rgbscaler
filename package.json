@@ -3,7 +3,7 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/tikevin83"
   },
-  "version": "0.7.0",
+  "version": "0.7.1",
   "author": "TiKevin83 <travismcgeehan@gmail.com>",
   "repository": {
     "type": "git",

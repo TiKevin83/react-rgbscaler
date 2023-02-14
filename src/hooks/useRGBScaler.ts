@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { initShaderProgram, initBuffers, initTexture } from '../lib/WebGL2HelperFunctions';
 import vertexShaderSource from '../shaders/all.vert';
 import crtFragmentShaderSource from '../shaders/crt.frag';
@@ -16,7 +16,7 @@ function useRGBScalerCanvas(
   const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const [gl, setGl] = useState<WebGL2RenderingContext | null>(null);
   const [shaderProgram, setShaderProgram] = useState<WebGLProgram | null>(null);
-  const [animationFrame, setAnimationFrame] = useState(0);
+  const animationFrame = useRef(0);
 
   function handleResize() {
     if (!video || !canvas || !gl || !shaderProgram) {
@@ -128,11 +128,11 @@ function useRGBScalerCanvas(
     }
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
     gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
-    setAnimationFrame(requestAnimationFrame(render));
+    animationFrame.current = requestAnimationFrame(render);
   }
 
   function cancelRender() {
-    cancelAnimationFrame(animationFrame);
+    cancelAnimationFrame(animationFrame.current);
   }
 
   return {
